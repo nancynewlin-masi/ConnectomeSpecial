@@ -1,6 +1,6 @@
 # Directories
 export PREQUALDIR=/DIFFUSION/
-export SLANTDIR=/SLANTD/
+export SLANTDIR=/SLANT/
 export OUTPUTDIR=/OUTPUTS/
 
 # make slant folder in def file
