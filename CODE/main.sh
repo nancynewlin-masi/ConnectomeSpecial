@@ -1,7 +1,7 @@
 # Directories
-export PREQUALDIR=/ConnectomeSpecial/DIFFUSION/
-export SLANTDIR=/ConnectomeSpecial/SLANT/
-export OUTPUTDIR=/ConnectomeSpecial/OUTPUTS/
+export PREQUALDIR=/DIFFUSION/
+export SLANTDIR=/SLANTD/
+export OUTPUTDIR=/OUTPUTS/
 
 # make slant folder in def file
 # rename diffusion as prequal
