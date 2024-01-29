@@ -5,20 +5,27 @@ export OUTPUTDIR=/OUTPUTS/
 
 # make slant folder in def file
 # rename diffusion as prequal
+
+# Get subject name...
+export fullname=$(find ${SLANTDIR}/post/FinalResult/sub* -name '*seg*.nii.gz')
+filename=$(basename "$fullname")
+export subses=${filename%%_T1w_seg.nii.gz}
 echo "NOTE: Beginning connectomics analysis with diffusion data at: ${PREQUALDIR}, Slant output at: ${SLANTDIR}."
 echo "NOTE: Output will be stored at ${OUTPUTDIR}"
 echo "Running Connectome Special version 1.0.0" >> ${OUTPUTDIR}/log.txt
 date >> ${OUTPUTDIR}/log.txt
+echo "SUBJECT_SESSION=$subses" >> ${OUTPUTDIR}/log.txt
 echo "PARCELLATION=Slant, 133 ROIs" >> ${OUTPUTDIR}/log.txt
 echo "NUMBER OF STREAMLINES=10,000,000" >> ${OUTPUTDIR}/log.txt
 echo "REGISTRATION SOFTWARE=epireg" >> ${OUTPUTDIR}/log.txt
 
 # Hyper parameters
-export NUMSTREAMS=10000000
+export NUMSTREAMS=100
 export WORKINGDIR=/ConnectomeSpecial/
 
 # Set up temporary directory that will be deleted at the end of processing
 export TEMPDIR=/ConnectomeSpecial/TEMP/
+mkdir /ConnectomeSpecial/TEMP/
 
 # Define look up tables for atlas. One will be ordered, the other the original lookup table.
 export ORIGLABELS=/ConnectomeSpecial/SUPPLEMENTAL/slant_origlabels.txt
@@ -35,7 +42,10 @@ echo "Successfully DWI found at ${DWI}, ${BVEC}, ${BVAL}." >> ${OUTPUTDIR}/log.t
 
 echo "Check for T1"
 #export T1=$(find ${ANATDIR} -name '*T1*.nii.gz' | head -n 1)
-export T1= $(find ${SLANTDIR}/pre/ -name 'orig_target.nii.gz')
+export T1=$(find ${SLANTDIR}/pre/ -name 'orig_target.nii.gz')
+cp ${T1} ${TEMPDIR}/T1.nii.gz
+export T1=${TEMPDIR}/T1.nii.gz
+
 if test -f "${T1}"; then
     echo "Successfully found T1 image at ${T1}." >> ${OUTPUTDIR}/log.txt
 else
@@ -51,7 +61,7 @@ else
     exit 0;
 fi
 
-export SLANTSEG=$(find ${SLANTDIR} -name '*seg*.nii.gz')
+export SLANTSEG=$(find ${SLANTDIR}/post/FinalResult/sub* -name '*seg*.nii.gz')
 if test -f "${SLANTSEG}"; then
     echo "Successfully found slant segmentation image at ${SLANTSEG}." >> ${OUTPUTDIR}/log.txt
 else
@@ -124,7 +134,8 @@ flirt -in ${TEMPDIR}/atlas_slant_t1.nii.gz -ref ${TEMPDIR}/b0.nii.gz -applyxfm -
 if test -f "${TEMPDIR}/atlas_slant_subj.nii.gz"; then
     echo "Successfully applied transform to atlas." >> ${OUTPUTDIR}/log.txt
     echo "Saving atlas as ${TEMPDIR}/atlas_slant_subj.nii.gz..." >> ${OUTPUTDIR}/log.txt
-    export ATLAS=${TEMPDIR}/atlas_freesurfer_subj.nii.gz
+    cp ${TEMPDIR}/atlas_slant_subj.nii.gz ${OUTPUTDIR}
+    export ATLAS=${TEMPDIR}/atlas_slant_subj.nii.gz
 else
     echo "FAILED: Could not apply transform to atlas." >> ${OUTPUTDIR}/log.txt
     exit 0;
@@ -201,7 +212,7 @@ else
     exit 0;
 fi
 
-python /CODE/convertconnectometonp_nos.py  ${TEMPDIR}/CONNECTOME_Weight_NUMSTREAMLINES_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${NUMSTREAMS}
+python /ConnectomeSpecial/CODE/convertconnectometonp_nos.py  ${TEMPDIR}/CONNECTOME_Weight_NUMSTREAMLINES_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${NUMSTREAMS}
 if test -f "${TEMPDIR}/CONNECTOME_NUMSTREAM.npy"; then
     echo "Successfully converted csv to npy and performed adaptive thresholding. Saiving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
     cp ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${OUTPUTDIR}
@@ -221,7 +232,7 @@ else
 fi
 
 # Convert to npy
-python /CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_Weight_MEANLENGTH_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_LENGTH.npy
+python /ConnectomeSpecial/CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_Weight_MEANLENGTH_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_LENGTH.npy
 if test -f "${TEMPDIR}/CONNECTOME_LENGTH.npy"; then
     echo "Successfully converted csv to npy. Saving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
     cp ${TEMPDIR}/CONNECTOME_LENGTH.npy ${OUTPUTDIR}
@@ -232,16 +243,16 @@ fi
 
 echo "Compute FA per streamline and create the FA weighted connectome..." >> ${OUTPUTDIR}/log.txt
 tcksample ${TCK_FILE} ${PREQUALDIR}/SCALARS/dwmri_tensor_fa.nii.gz ${TEMPDIR}/mean_FA_per_streamline.csv -stat_tck mean
-tck2connectome ${TCK_FILE} ${ATLAS} ${TEMPDIR}/CONNECTOME_${ID}_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv -scale_file ${TEMPDIR}/mean_FA_per_streamline.csv -stat_edge mean
-if test -f "${TEMPDIR}/CONNECTOME_${ID}_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv"; then
+tck2connectome ${TCK_FILE} ${ATLAS} ${TEMPDIR}/CONNECTOME_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv -scale_file ${TEMPDIR}/mean_FA_per_streamline.csv -stat_edge mean -symmetric
+if test -f "${TEMPDIR}/CONNECTOME_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv"; then
     echo "Successfully created connectome weighted by mean FA. Saiving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
-    cp ${TEMPDIR}/CONNECTOME_${ID}_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${OUTPUTDIR}
+    cp ${TEMPDIR}/CONNECTOME_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${OUTPUTDIR}
 else
     echo "FAILED: Did not create connectome weighted by number of streamlines." >> ${OUTPUTDIR}/log.txt
     exit 0;
 fi 
 
-python /CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_${ID}_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_FA.npy
+python /ConnectomeSpecial/CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_${ID}_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_FA.npy
 if test -f "${TEMPDIR}/CONNECTOME_FA.npy"; then
     echo "Successfully converted csv to npy. Saving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
     cp ${TEMPDIR}/CONNECTOME_FA.npy ${OUTPUTDIR}
@@ -283,3 +294,4 @@ fi
 echo "Completed Connectome special." >> ${OUTPUTDIR}/log.txt
 date >> ${OUTPUTDIR}/log.txt
 
+python /ConnectomeSpecial/CODE/qa.py /TEMP/b0.nii.gz ${SLANTSEG} ${OUTPUTDIR}/CONNECTOME_NUMSTREAM.npy ${OUTPUTDIR}/CONNECTOME_LENGTH.npy ${OUTPUTDIR}/CONNECTOME_FA.npy ${OUTPUTDIR}/graphmeasures.json ${OUTPUTDIR}/log.txt ${OUTPUTDIR}/ConnectomeQA.png
