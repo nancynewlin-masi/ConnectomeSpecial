@@ -252,7 +252,7 @@ else
     exit 0;
 fi 
 
-python /ConnectomeSpecial/CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_${ID}_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_FA.npy
+python /ConnectomeSpecial/CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_FA.npy
 if test -f "${TEMPDIR}/CONNECTOME_FA.npy"; then
     echo "Successfully converted csv to npy. Saving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
     cp ${TEMPDIR}/CONNECTOME_FA.npy ${OUTPUTDIR}
