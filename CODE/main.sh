@@ -24,8 +24,8 @@ export NUMSTREAMS=10000000
 export WORKINGDIR=/ConnectomeSpecial/
 
 # Set up temporary directory that will be deleted at the end of processing
-export TEMPDIR=/ConnectomeSpecial/TEMP/
-mkdir /ConnectomeSpecial/TEMP/
+export TEMPDIR=/TEMP/
+mkdir /TEMP/
 
 # Define look up tables for atlas. One will be ordered, the other the original lookup table.
 export ORIGLABELS=/ConnectomeSpecial/SUPPLEMENTAL/slant_origlabels.txt
