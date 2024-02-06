@@ -17,7 +17,7 @@ bash main.sh {diffusion data directory} {freesurfer output directory} {unique ID
 # Technical Notes
 This script performs probabilistic tractography (MRtrix "iFOD2" algorithm, the default algorithm) using a white matter FOD. It is anatomicall constrained ("-act" setting on) using a 5-tissue-type mask generated from the associated structural image (T1 weighted scan). 
 The atlas is SLANT https://github.com/MASILab/SLANTbrainSeg/tree/master. It determines the dimensions of the connectivity matrix (i.e. connectome). 
-The lookup table is at /SUPPLEMENTARY/origlabels.txt. 
+The lookup table is at /SUPPLEMENTAL/slant_origlabels.txt. 
 Currently, the script defualt generates 10 million streamlines. We map this version to a connectome.
 Then, to reduce the size we use a scilpy script to compress the tck file (track files can't be reduced easily by zipping/gzipping). 
 
