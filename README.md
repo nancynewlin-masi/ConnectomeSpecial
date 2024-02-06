@@ -1,32 +1,36 @@
-## MASI Lab Connectome Special
-# How to run/Inputs:
+# MASI Lab Connectome Special
+Code implementation by Nancy Newlin.
+
+## How to run/Inputs:
 bash main.sh {diffusion data directory} {freesurfer output directory} {unique ID}  {output directory}
 * Diffusion Data directory: Should be PreQualled data. Expects to be named as dwmri.nii.gz, dwmri.bvec, dwmri.bval
 * Freesurfer output directory: expects to be organized as it is output from Freesurfer processing. We use aparc+aseg.mgz and T1.mgz from here to make the Desikan Killany atlas and 5tt mask.
 * Unique ID: Can be anything, but it's needed to keep the temporary directories separate when processing a lot at once. Example: subject_session_run
 * Output directory: wherever you want the output to be stored.
 
-# Outputs
+## Outputs
 * Graph measures computed using the Brain Connectivity Toolbox
 * Connectome weighted by Number of streamlines between brain regions
 * Connectome weighted by average length in mm of streamline connecting brain regions
 
-# Customizable hyperparameters
+## Customizable hyperparameters
 * The number of streamlines used for tractography are 10,000,000. This can be changed in the script.
 * The working directory is where the script expected the "support_scripts" folder to be, and where the temporary directories will be made.
 
-# Quality Control - Example visualization
+## Quality Control - Example visualization
 The following document is generated automatically.
 
 
-# Technical Notes
+## Technical Notes
 This script performs probabilistic tractography (MRtrix "iFOD2" algorithm, the default algorithm) using a white matter FOD. It is anatomicall constrained ("-act" setting on) using a 5-tissue-type mask generated from the associated structural image (T1 weighted scan). 
 The atlas is SLANT https://github.com/MASILab/SLANTbrainSeg/tree/master. It determines the dimensions of the connectivity matrix (i.e. connectome). 
 The lookup table is at /SUPPLEMENTAL/slant_origlabels.txt. 
 Currently, the script defualt generates 10 million streamlines. We map this version to a connectome.
 Then, to reduce the size we use a scilpy script to compress the tck file (track files can't be reduced easily by zipping/gzipping). 
 
-# References
+## References
+Please cite the following if using this singularity. 
+
 * Tractography/Connectomics: https://www.mrtrix.org/
 Tournier, J.-D.; Smith, R. E.; Raffelt, D.; Tabbara, R.; Dhollander, T.; Pietsch, M.; Christiaens, D.; Jeurissen, B.; Yeh, C.-H. & Connelly, A. MRtrix3: A fast, flexible and open software framework for medical image processing and visualisation. NeuroImage, 2019, 202, 116137
 * Graph measures: https://sites.google.com/site/bctnet/
