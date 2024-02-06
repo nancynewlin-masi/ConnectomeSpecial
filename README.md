@@ -1,3 +1,4 @@
+## MASI Lab Connectome Special
 # How to run/Inputs:
 bash main.sh {diffusion data directory} {freesurfer output directory} {unique ID}  {output directory}
 * Diffusion Data directory: Should be PreQualled data. Expects to be named as dwmri.nii.gz, dwmri.bvec, dwmri.bval
@@ -13,6 +14,10 @@ bash main.sh {diffusion data directory} {freesurfer output directory} {unique ID
 # Customizable hyperparameters
 * The number of streamlines used for tractography are 10,000,000. This can be changed in the script.
 * The working directory is where the script expected the "support_scripts" folder to be, and where the temporary directories will be made.
+
+# Quality Control - Example visualization
+The following document is generated automatically.
+
 
 # Technical Notes
 This script performs probabilistic tractography (MRtrix "iFOD2" algorithm, the default algorithm) using a white matter FOD. It is anatomicall constrained ("-act" setting on) using a 5-tissue-type mask generated from the associated structural image (T1 weighted scan). 
