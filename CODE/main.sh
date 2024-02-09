@@ -24,6 +24,7 @@ export NUMSTREAMS=100   #10000000
 export WORKINGDIR=/ConnectomeSpecial/
 
 # Set up temporary directory that will be deleted at the end of processing
+mkdir /OUTPUTS/TEMP/
 export TEMPDIR=/OUTPUTS/TEMP/
 
 
