@@ -20,11 +20,11 @@ echo "NUMBER OF STREAMLINES=10,000,000" >> ${OUTPUTDIR}/log.txt
 echo "REGISTRATION SOFTWARE=epireg" >> ${OUTPUTDIR}/log.txt
 
 # Hyper parameters
-export NUMSTREAMS=10000000
+export NUMSTREAMS=100   #10000000
 export WORKINGDIR=/ConnectomeSpecial/
 
 # Set up temporary directory that will be deleted at the end of processing
-export TEMPDIR=/TEMP/
+export TEMPDIR=/OUTPUTS/TEMP/
 
 
 # Define look up tables for atlas. One will be ordered, the other the original lookup table.
