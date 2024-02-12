@@ -295,4 +295,4 @@ fi
 echo "Completed Connectome special." >> ${OUTPUTDIR}/log.txt
 date >> ${OUTPUTDIR}/log.txt
 
-python /ConnectomeSpecial/CODE/qa.py /ConnectomeSpecial/TEMP/b0.nii.gz ${ATLAS} ${OUTPUTDIR}/CONNECTOME_NUMSTREAM.npy ${OUTPUTDIR}/CONNECTOME_LENGTH.npy ${OUTPUTDIR}/CONNECTOME_FA.npy ${OUTPUTDIR}/graphmeasures.json ${OUTPUTDIR}/log.txt ${OUTPUTDIR}/ConnectomeQA.png
+python /ConnectomeSpecial/CODE/qa.py ${TEMPDIR}/b0.nii.gz ${ATLAS} ${OUTPUTDIR}/CONNECTOME_NUMSTREAM.npy ${OUTPUTDIR}/CONNECTOME_LENGTH.npy ${OUTPUTDIR}/CONNECTOME_FA.npy ${OUTPUTDIR}/graphmeasures.json ${OUTPUTDIR}/log.txt ${OUTPUTDIR}/ConnectomeQA.png
