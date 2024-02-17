@@ -20,9 +20,11 @@ run_part="${run_part%%/*}"
 if [ -z "${run_part}" ]; then
     echo "The 'run_part' is empty."
     export workingpath_accre=${mypath}/temp_sub-${sub_part}_ses-${ses_part}/
+    export id=sub-${sub_part}_ses-${ses_part}_run-${run_part}
 else
     echo "The 'run_part' contains: $run_part"
     export workingpath_accre=${mypath}/temp_sub-${sub_part}_ses-${ses_part}_run-${run_part}/
+    export id=sub-${sub_part}_ses-${ses_part}
 fi
 
 echo "Subject: $sub_part"
@@ -35,3 +37,13 @@ scp -r ${myuser}@hickory.accre.vanderbilt.edu:${prequalpath_nfs2} ${myuser}@hick
 scp -r ${myuser}@hickory.accre.vanderbilt.edu:${slantpath_nfs2} ${myuser}@hickory.accre.vanderbilt.edu:${workingpath_accre}/Slant/
 mkdir ${workingpath_accre}/Output/
 echo singularity run --bind ${workingpath_accre}/PreQual/:/DIFFUSION/,${workingpath_accre}/Slant/:/SLANT/,${workingpath_accre}/Output/:/OUTPUTS/ ${singularity_path}
+
+IFS='/' read -ra ADDR <<< "$prequalpath_nfs2"
+
+# Extract the fourth part of the path
+# Note: In bash, array indices start at 0, so the fourth part is at index 3
+study_name=${ADDR[3]}
+export rawoutput_nfs=/nfs2/harmonization/raw/${study_name}_ConnectomeSpecial/
+mkdir ${rawoutput_nfs}
+echo "Test" >> ${workingpath_accre}/Output/test
+scp ${myuser}@hickory.accre.vanderbilt.edu:${workingpath_accre}/Output/* ${myuser}@hickory.accre.vanderbilt.edu:${rawoutput_nfs}/${id}
