@@ -42,7 +42,7 @@ IFS='/' read -ra ADDR <<< "$prequalpath_nfs2"
 
 # Extract the fourth part of the path
 # Note: In bash, array indices start at 0, so the fourth part is at index 3
-study_name=${ADDR[3]}
+study_name=${ADDR[4]}
 export rawoutput_nfs=/nfs2/harmonization/raw/${study_name}_ConnectomeSpecial/
 mkdir ${rawoutput_nfs}
 echo "Test" >> ${workingpath_accre}/Output/test
