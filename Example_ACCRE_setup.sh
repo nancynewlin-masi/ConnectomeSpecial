@@ -1,3 +1,9 @@
+# This code moves files from the ADSP harmonization directory on nfs to accre. Then, it sends the outputs to the raw directory. 
+# This code assumes the directories and naming conventions follow BIDS. If they do not, this will fail.
+# This code assumes the user has set up their key permissions to scp between nfs2 and hickory without putting in their password. 
+# Otherwise, it will ask for your password for every file transfer. 
+# If not Nancy/newlinnr, please change the myuser , singularity path, and mypath variables. 
+
 export prequalpath_nfs2=${1}
 export slantpath_nfs2=${2}
 export mypath=/nobackup/p_masi_brain_map/newlinnr/ConnectomeSpecial/
@@ -46,4 +52,4 @@ study_name=${ADDR[4]}
 export rawoutput_nfs=/nfs2/harmonization/raw/${study_name}_ConnectomeSpecial/
 mkdir ${rawoutput_nfs}
 echo "Test" >> ${workingpath_accre}/Output/test
-scp ${myuser}@hickory.accre.vanderbilt.edu:${workingpath_accre}/Output/* ${myuser}@hickory.accre.vanderbilt.edu:${rawoutput_nfs}/${id}
+scp ${myuser}@hickory.accre.vanderbilt.edu:${workingpath_accre}/Output/* ${myuser}@hickory.accre.vanderbilt.edu:${rawoutput_nfs}/${id}/
