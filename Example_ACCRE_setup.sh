@@ -24,13 +24,19 @@ run_part="${run_part%%/*}"
 
 # Check if the "run_part" is empty using bash parameter expansion
 if [ -z "${run_part}" ]; then
-    echo "The 'run_part' is empty."
-    export workingpath_accre=${mypath}/temp_sub-${sub_part}_ses-${ses_part}/
-    export id=sub-${sub_part}_ses-${ses_part}_run-${run_part}
+    if [ -z "${ses_part}" ]; then
+        echo "The 'run_part' and 'ses_part' is empty."
+        export workingpath_accre=${mypath}/temp_sub-${sub_part}/
+        export id=sub-${sub_part}
+    else
+        echo "The 'run_part' is empty."
+        export workingpath_accre=${mypath}/temp_sub-${sub_part}_ses-${ses_part}/
+        export id=sub-${sub_part}_ses-${ses_part}
+    fi
 else
     echo "The 'run_part' contains: $run_part"
     export workingpath_accre=${mypath}/temp_sub-${sub_part}_ses-${ses_part}_run-${run_part}/
-    export id=sub-${sub_part}_ses-${ses_part}
+    export id=sub-${sub_part}_ses-${ses_part}_run-${run_part}
 fi
 
 echo "Subject: $sub_part"
