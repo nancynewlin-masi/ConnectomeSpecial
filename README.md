@@ -4,18 +4,14 @@ Code implementation by Nancy Newlin.
 ## How to run/Inputs:
 bash main.sh {diffusion data directory} {freesurfer output directory} {unique ID}  {output directory}
 * Diffusion Data directory: Should be PreQualled data. Expects to be named as dwmri.nii.gz, dwmri.bvec, dwmri.bval
-* Freesurfer output directory: expects to be organized as it is output from Freesurfer processing. We use aparc+aseg.mgz and T1.mgz from here to make the Desikan Killany atlas and 5tt mask.
-* Unique ID: Can be anything, but it's needed to keep the temporary directories separate when processing a lot at once. Example: subject_session_run
+* SLANT Data directory:
 * Output directory: wherever you want the output to be stored.
 
 ## Outputs
 * Graph measures computed using the Brain Connectivity Toolbox
 * Connectome weighted by Number of streamlines between brain regions
 * Connectome weighted by average length in mm of streamline connecting brain regions
-
-## Customizable hyperparameters
-* The number of streamlines used for tractography are 10,000,000. This can be changed in the script.
-* The working directory is where the script expected the "support_scripts" folder to be, and where the temporary directories will be made.
+* Connectome weighted by average FA 
 
 ## Quality Control - Example visualization
 The following document is generated automatically.
