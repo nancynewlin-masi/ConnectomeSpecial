@@ -3,7 +3,6 @@
 # This code assumes the user has set up their key permissions to scp between nfs2 and hickory without putting in their password. 
 # Otherwise, it will ask for your password for every file transfer. 
 # If not Nancy/newlinnr, please change the myuser , singularity path, and mypath variables. 
-
 export prequalpath_nfs2=${1}
 export slantpath_nfs2=${2}
 export mypath=/nobackup/p_masi_brain_map/newlinnr/ConnectomeSpecial/
@@ -24,19 +23,13 @@ run_part="${run_part%%/*}"
 
 # Check if the "run_part" is empty using bash parameter expansion
 if [ -z "${run_part}" ]; then
-    if [ -z "${ses_part}" ]; then
-        echo "The 'run_part' and 'ses_part' is empty."
-        export workingpath_accre=${mypath}/temp_sub-${sub_part}/
-        export id=sub-${sub_part}
-    else
-        echo "The 'run_part' is empty."
-        export workingpath_accre=${mypath}/temp_sub-${sub_part}_ses-${ses_part}/
-        export id=sub-${sub_part}_ses-${ses_part}
-    fi
+    echo "The 'run_part' is empty."
+    export workingpath_accre=${mypath}/temp_sub-${sub_part}_ses-${ses_part}/
+    export id=sub-${sub_part}_ses-${ses_part}_run-${run_part}
 else
     echo "The 'run_part' contains: $run_part"
     export workingpath_accre=${mypath}/temp_sub-${sub_part}_ses-${ses_part}_run-${run_part}/
-    export id=sub-${sub_part}_ses-${ses_part}_run-${run_part}
+    export id=sub-${sub_part}_ses-${ses_part}
 fi
 
 echo "Subject: $sub_part"
@@ -54,8 +47,7 @@ IFS='/' read -ra ADDR <<< "$prequalpath_nfs2"
 
 # Extract the fourth part of the path
 # Note: In bash, array indices start at 0, so the fourth part is at index 3
-study_name=${ADDR[4]}
+study_name=${ADDR[3]}
 export rawoutput_nfs=/nfs2/harmonization/raw/${study_name}_ConnectomeSpecial/
-mkdir ${rawoutput_nfs}
-echo "Test" >> ${workingpath_accre}/Output/test
-scp ${myuser}@hickory.accre.vanderbilt.edu:${workingpath_accre}/Output/* ${myuser}@hickory.accre.vanderbilt.edu:${rawoutput_nfs}/${id}/
+mkdir ${rawoutput_nfs} # if this fails, need to do it at an earlier step
+scp ${myuser}@hickory.accre.vanderbilt.edu:${workingpath_accre}/Output/* ${myuser}@hickory.accre.vanderbilt.edu:${rawoutput_nfs}/${id}
