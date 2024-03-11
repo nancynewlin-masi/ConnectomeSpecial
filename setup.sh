@@ -22,7 +22,7 @@ while IFS= read -r line; do
   fi
 
   echo "#!/bin/bash" >> ${WORKINGDIR}/scripts_${DATASET}/${index}.sh
-  echo "bash ${WORKINGDIR}/populate_jobarray.sh $line $found_directory" >> ${WORKINGDIR}/scripts_${DATASET}/${index}.sh
+  echo "bash ${WORKINGDIR}/main.sh $line $found_directory" >> ${WORKINGDIR}/scripts_${DATASET}/${index}.sh
   export index=$((++index))
 done < ${WORKINGDIR}/listoflocations_${DATASET}
 
