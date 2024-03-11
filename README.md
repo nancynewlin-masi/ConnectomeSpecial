@@ -1,21 +1,25 @@
 # MASI Lab Connectome Special
 Code implementation by Nancy Newlin.
 
-## How to run/Inputs:
-bash main.sh {diffusion data directory} {freesurfer output directory} {unique ID}  {output directory}
-* Diffusion Data directory: Should be PreQualled data. Expects to be named as dwmri.nii.gz, dwmri.bvec, dwmri.bval
-* SLANT Data directory:
-* Output directory: wherever you want the output to be stored.
+## setup.sh
+For a given dataset on nfs2, matches prequal and slant outputs. Then, sets up commands to run connectome special in a job array format. 
+
+## main.sh
+This is a wrapper around the singularity command to make sure all of the input directories are properly bound and on accre, runs the singularity, and then sends the outputs of the singularity to nfs2 (automatically generates the destination as "/nfs2/harmonization/raw/${DATASETNAME}_ConnectomeSpecial/sub-#_ses-#_run-#", with the naming as appropriate. 
+
+## The Singularity 
+Example: singularity run --bind ${workingpath_accre}/PreQual/:/DIFFUSION/,${workingpath_accre}/Slant/:/SLANT/,${workingpath_accre}/Output/:/OUTPUTS/ ${singularity_path}
 
 ## Outputs
-* Graph measures computed using the Brain Connectivity Toolbox
+* Graph measures computed using the Brain Connectivity Toolbox (global and nodal)
 * Connectome weighted by Number of streamlines between brain regions
 * Connectome weighted by average length in mm of streamline connecting brain regions
-* Connectome weighted by average FA 
+* Connectome weighted by average FA
+* QA document
 
 ## Quality Control - Example visualization
 The following document is generated automatically.
-
+{WIP}
 
 ## Technical Notes
 This script performs probabilistic tractography (MRtrix "iFOD2" algorithm, the default algorithm) using a white matter FOD. It is anatomicall constrained ("-act" setting on) using a 5-tissue-type mask generated from the associated structural image (T1 weighted scan). 
