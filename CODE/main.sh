@@ -89,7 +89,9 @@ else
     #echo "Apply PreQual brain mask to T1 image..." >> ${OUTPUTDIR}/log.txt
     #mri_mask ${T1} ${PREQUALDIR}/PREPROCESSED/mask.nii.gz ${TEMPDIR}/T1_brain.nii.gz
     echo "Apply brain mask to T1 image..." >> ${OUTPUTDIR}/log.txt
-    bet ${T1} ${TEMPDIR}/T1_brain.nii.gz
+    #bet ${T1} ${TEMPDIR}/T1_brain.nii.gz
+    fslmaths ${SLANTSEG}> -bin ${TEMPDIR}/Brain_mask_inT1space.nii.gz
+    fslmaths ${T1} -mul ${TEMPDIR}/Brain_mask_inT1space.nii.gz ${TEMPDIR}/T1_brain.nii.gz
 
     if test -f "${TEMPDIR}/T1_brain.nii.gz"; then
         echo "Successfully processed T1 brain." >> ${OUTPUTDIR}/log.txt
