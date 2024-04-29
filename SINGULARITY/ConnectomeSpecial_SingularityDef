@@ -123,7 +123,7 @@ https://github.com/MASILab/AtlasToDiffusionReg
     cd /APPS/
     git clone https://github.com/scilus/scilpy.git
     cp /ConnectomeSpecial/CODE/getgraphmeasures.py /APPS/scilpy/getgraphmeasures.py
-    cp /APPS/scilpy/scripts/scil_compress_streamlines.py /APPS/scilpy/scil_compress_streamlines.py
+    cp /ConnectomeSpecial/CODE/scil_compress_streamlines.py /APPS/scilpy/scil_compress_streamlines.py
     
     #mv src/APPS/* /APPS
     #mv src/CODE/* /CODE
