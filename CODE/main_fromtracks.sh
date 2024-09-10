@@ -30,7 +30,7 @@ export WORKINGDIR=/ConnectomeSpecial/
 # Set up temporary directory that will be deleted at the end of processing
 mkdir /OUTPUTS/TEMP/
 export TEMPDIR=/OUTPUTS/TEMP/
-export TCK_FILE=/OUTPUTDIR/tracks_10000000_compressed.tck
+export TCK_FILE=${OUTPUTDIR}/tracks_10000000_compressed.tck
 
 
 # Define look up tables for atlas. One will be ordered, the other the original lookup table.
