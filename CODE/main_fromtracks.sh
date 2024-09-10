@@ -5,6 +5,7 @@
 export PREQUALDIR=/DIFFUSION/
 export SLANTDIR=/SLANT/
 export OUTPUTDIR=/OUTPUTS/
+export WMATLAS=/WMATLAS/
 
 # make slant folder in def file
 # rename diffusion as prequal
@@ -127,6 +128,14 @@ else
     fi
 fi
 
+export epi_transform=/WMATLAS/dwmri%ANTS_t1tob0.txt
+export t1_to_template_affine=/WMATLAS//dwmri%0GenericAffine.mat
+export t1_to_template_invwarp=/WMATLAS//dwmri%1InverseWarp.nii.gz
+
+antsApplyTransforms -d 3 -i  ${T1} -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
+    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${TEMPDIR}/T1_inDWIspace.nii.gz
+    
+
 #echo "Labelconvert to get the Slant atlas..." >> ${OUTPUTDIR}/log.txt
 #labelconvert ${SLANTSEG} $ORIGLABELS  $DESTLABELS ${TEMPDIR}/atlas_slant_t1.nii.gz
 echo "Converting SLANT-TICV labelmap to remove CSF/WM regions (with and without brainstem)" >> ${OUTPUTDIR}/log.txt
@@ -154,7 +163,10 @@ fi
 
 
 echo "Apply transform to atlas..." >> ${OUTPUTDIR}/log.txt
-flirt -in ${TEMPDIR}/atlas_slant_t1.nii.gz -ref ${OUTPUTDIR}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat -out ${TEMPDIR}/atlas_slant_subj.nii.gz  -interp nearestneighbour
+antsApplyTransforms -d 3 -i  ${TEMPDIR}/atlas_slant_t1.nii.gz -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
+    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${TEMPDIR}/atlas_slant_subj.nii.gz
+
+#flirt -in ${TEMPDIR}/atlas_slant_t1.nii.gz -ref ${OUTPUTDIR}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat -out ${TEMPDIR}/atlas_slant_subj.nii.gz  -interp nearestneighbour
 if test -f "${TEMPDIR}/atlas_slant_subj.nii.gz"; then
     echo "Successfully applied transform to atlas." >> ${OUTPUTDIR}/log.txt
     echo "Saving atlas as ${TEMPDIR}/atlas_slant_subj.nii.gz..." >> ${OUTPUTDIR}/log.txt
@@ -167,7 +179,9 @@ fi
 
 ### ADDED BY MICHAEL
 export SLANT_SUBJ_STEM=${TEMPDIR}/atlas_slant_subj_stem.nii.gz
-flirt -in ${ATLAS_STEM} -ref ${OUTPUTDIR}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat -out ${SLANT_SUBJ_STEM} -interp nearestneighbour
+antsApplyTransforms -d 3 -i ${ATLAS_STEM} -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
+    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${SLANT_SUBJ_STEM}
+#flirt -in ${ATLAS_STEM} -ref ${OUTPUTDIR}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat -out ${SLANT_SUBJ_STEM} -interp nearestneighbour
 if test -f "${SLANT_SUBJ_STEM}"; then
     echo "Successfully applied transform to atlas with stem." >> ${OUTPUTDIR}/log.txt
     echo "Saving atlas as ${SLANT_SUBJ_STEM}..." >> ${OUTPUTDIR}/log.txt
@@ -179,14 +193,7 @@ else
 fi
 ### END ADDITION
 
-echo "Applying transform to T1 brain..."
-flirt -in ${TEMPDIR}/T1_brain.nii.gz -ref ${OUTPUTDIR}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat -out ${TEMPDIR}/T1_brain_in_DWI.nii.gz 
-if [[ -f ${TEMPDIR}/T1_brain_in_DWI.nii.gz ]]; then
-	echo "T1 brain found in DWI space. Proceeding to next step." >> ${OUTPUTDIR}/log.txt
-else
-	echo "ERROR FOUND: Apply transform failed. Exiting" >> ${OUTPUTDIR}/log.txt
-	exit 0
-fi
+
 
 
 echo "Map tracks to Connectomes -NOS, Mean Length, FA-, guided by atlas..." >> ${OUTPUTDIR}/log.txt
