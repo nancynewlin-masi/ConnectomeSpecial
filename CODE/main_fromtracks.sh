@@ -141,9 +141,9 @@ antsApplyTransforms -d 3 -i  ${T1} -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNe
 echo "Converting SLANT-TICV labelmap to remove CSF/WM regions (with and without brainstem)" >> ${OUTPUTDIR}/log.txt
 
 ### ADDED BY MICHAEL
-python3 /CODE/edit_labelmap.py ${SLANTSEG} ${NEWLABELS} ${ORIGLABELS} ${TEMPDIR}/atlas_slant_t1.nii.gz
+python3 /ConnectomeSpecial/CODE/edit_labelmap.py ${SLANTSEG} ${NEWLABELS} ${ORIGLABELS} ${TEMPDIR}/atlas_slant_t1.nii.gz
 export ATLAS_STEM=${TEMPDIR}/atlas_slant_t1_w_stem.nii.gz
-python3 /CODE/edit_labelmap.py ${SLANTSEG} ${NEWLABELS_STEM} ${ORIGLABELS} ${ATLAS_STEM}
+python3 /ConnectomeSpecial/CODE/edit_labelmap.py ${SLANTSEG} ${NEWLABELS_STEM} ${ORIGLABELS} ${ATLAS_STEM}
 ### END ADDITION
 
 if test -f "${TEMPDIR}/atlas_slant_t1.nii.gz"; then
