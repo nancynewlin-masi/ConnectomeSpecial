@@ -6,6 +6,7 @@ export PREQUALDIR=/DIFFUSION/
 export SLANTDIR=/SLANT/
 export OUTPUTDIR=/OUTPUTS/
 export WMATLAS=/WMATLAS/
+export TRACKS=/TRACKS/
 
 # make slant folder in def file
 # rename diffusion as prequal
@@ -30,7 +31,7 @@ export WORKINGDIR=/ConnectomeSpecial/
 # Set up temporary directory that will be deleted at the end of processing
 mkdir /OUTPUTS/TEMP/
 export TEMPDIR=/OUTPUTS/TEMP/
-export TCK_FILE=${OUTPUTDIR}/tracks_10000000_compressed.tck
+export TCK_FILE=${TRACKS}/tracks_10000000_compressed.tck
 
 
 # Define look up tables for atlas. One will be ordered, the other the original lookup table.
@@ -106,7 +107,7 @@ else
     fi
 
     echo "Apply transforms to atlas image to register to subject space..."  >> ${OUTPUTDIR}/log.txt
-    epi_reg --epi=${OUTPUTDIR}/b0.nii.gz --t1=${T1} --t1brain=${TEMPDIR}/T1_brain.nii.gz --out=${TEMPDIR}/b02t1
+    epi_reg --epi=${TRACKS}/b0.nii.gz --t1=${T1} --t1brain=${TEMPDIR}/T1_brain.nii.gz --out=${TEMPDIR}/b02t1
 
     if test -f "${TEMPDIR}/b02t1.mat"; then
         echo "Successfully computed a registration transform between T1 and b0." >> ${OUTPUTDIR}/log.txt
@@ -119,7 +120,7 @@ else
     convert_xfm -omat ${TEMPDIR}/t12b0.mat -inverse ${TEMPDIR}/b02t1.mat
 
     echo "Apply transform to T1..."  >> ${OUTPUTDIR}/log.txt  # ${TEMPDIR}/T1_bet.nii.gz
-    flirt -in ${T1} -ref ${OUTPUTDIR}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat  -out ${TEMPDIR}/T1_inDWIspace.nii.gz
+    flirt -in ${T1} -ref ${TRACKS}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat  -out ${TEMPDIR}/T1_inDWIspace.nii.gz
     if test -f "${TEMPDIR}/T1_inDWIspace.nii.gz"; then
         echo "CHECK: Registered T1 found. Proceeding to next step." >> ${OUTPUTDIR}/log.txt
     else
@@ -128,12 +129,12 @@ else
     fi
 fi
 
-export epi_transform=/WMATLAS/dwmri%ANTS_t1tob0.txt
-export t1_to_template_affine=/WMATLAS//dwmri%0GenericAffine.mat
-export t1_to_template_invwarp=/WMATLAS//dwmri%1InverseWarp.nii.gz
+#export epi_transform=/WMATLAS/dwmri%ANTS_t1tob0.txt
+#export t1_to_template_affine=/WMATLAS//dwmri%0GenericAffine.mat
+#export t1_to_template_invwarp=/WMATLAS//dwmri%1InverseWarp.nii.gz
 
-antsApplyTransforms -d 3 -i  ${T1} -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
-    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${TEMPDIR}/T1_inDWIspace.nii.gz
+#antsApplyTransforms -d 3 -i  ${T1} -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
+#    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${TEMPDIR}/T1_inDWIspace.nii.gz
     
 
 #echo "Labelconvert to get the Slant atlas..." >> ${OUTPUTDIR}/log.txt
@@ -163,10 +164,10 @@ fi
 
 
 echo "Apply transform to atlas..." >> ${OUTPUTDIR}/log.txt
-antsApplyTransforms -d 3 -i  ${TEMPDIR}/atlas_slant_t1.nii.gz -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
-    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${TEMPDIR}/atlas_slant_subj.nii.gz
+#antsApplyTransforms -d 3 -i  ${TEMPDIR}/atlas_slant_t1.nii.gz -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
+#    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${TEMPDIR}/atlas_slant_subj.nii.gz
 
-#flirt -in ${TEMPDIR}/atlas_slant_t1.nii.gz -ref ${OUTPUTDIR}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat -out ${TEMPDIR}/atlas_slant_subj.nii.gz  -interp nearestneighbour
+flirt -in ${TEMPDIR}/atlas_slant_t1.nii.gz -ref ${TRACKS}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat -out ${TEMPDIR}/atlas_slant_subj.nii.gz  -interp nearestneighbour
 if test -f "${TEMPDIR}/atlas_slant_subj.nii.gz"; then
     echo "Successfully applied transform to atlas." >> ${OUTPUTDIR}/log.txt
     echo "Saving atlas as ${TEMPDIR}/atlas_slant_subj.nii.gz..." >> ${OUTPUTDIR}/log.txt
@@ -179,9 +180,9 @@ fi
 
 ### ADDED BY MICHAEL
 export SLANT_SUBJ_STEM=${TEMPDIR}/atlas_slant_subj_stem.nii.gz
-antsApplyTransforms -d 3 -i ${ATLAS_STEM} -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
-    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${SLANT_SUBJ_STEM}
-#flirt -in ${ATLAS_STEM} -ref ${OUTPUTDIR}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat -out ${SLANT_SUBJ_STEM} -interp nearestneighbour
+#antsApplyTransforms -d 3 -i ${ATLAS_STEM} -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
+#    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${SLANT_SUBJ_STEM}
+flirt -in ${ATLAS_STEM} -ref ${TRACKS}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat -out ${SLANT_SUBJ_STEM} -interp nearestneighbour
 if test -f "${SLANT_SUBJ_STEM}"; then
     echo "Successfully applied transform to atlas with stem." >> ${OUTPUTDIR}/log.txt
     echo "Saving atlas as ${SLANT_SUBJ_STEM}..." >> ${OUTPUTDIR}/log.txt
@@ -207,7 +208,7 @@ else
     exit 0;
 fi
 
-python /ConnectomeSpecial/CODE/convertconnectometonp_nos.py  ${TEMPDIR}/CONNECTOME_Weight_NUMSTREAMLINES_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${NUMSTREAMS}
+python3 /ConnectomeSpecial/CODE/convertconnectometonp_nos.py  ${TEMPDIR}/CONNECTOME_Weight_NUMSTREAMLINES_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${NUMSTREAMS}
 if test -f "${TEMPDIR}/CONNECTOME_NUMSTREAM.npy"; then
     echo "Successfully converted csv to npy and performed adaptive thresholding. Saiving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
     cp ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${OUTPUTDIR}
@@ -227,7 +228,7 @@ else
 fi
 
 # Convert to npy
-python /ConnectomeSpecial/CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_Weight_MEANLENGTH_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_LENGTH.npy
+python3 /ConnectomeSpecial/CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_Weight_MEANLENGTH_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_LENGTH.npy
 if test -f "${TEMPDIR}/CONNECTOME_LENGTH.npy"; then
     echo "Successfully converted csv to npy. Saving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
     cp ${TEMPDIR}/CONNECTOME_LENGTH.npy ${OUTPUTDIR}
@@ -247,7 +248,7 @@ else
     exit 0;
 fi
 
-python /ConnectomeSpecial/CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_FA.npy
+python3 /ConnectomeSpecial/CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_FA.npy
 if test -f "${TEMPDIR}/CONNECTOME_FA.npy"; then
     echo "Successfully converted csv to npy. Saving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
     cp ${TEMPDIR}/CONNECTOME_FA.npy ${OUTPUTDIR}
@@ -257,8 +258,8 @@ else
 fi
 
 # Get graph measure
-python /APPS/scilpy/getgraphmeasures.py  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${TEMPDIR}/CONNECTOME_LENGTH.npy  ${TEMPDIR}/graphmeasures.json --avg_node_wise
-python /APPS/scilpy/getgraphmeasures.py  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${TEMPDIR}/CONNECTOME_LENGTH.npy  ${TEMPDIR}/graphmeasures_nodes.json
+python3 /APPS/scilpy/getgraphmeasures.py  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${TEMPDIR}/CONNECTOME_LENGTH.npy  ${TEMPDIR}/graphmeasures.json --avg_node_wise
+python3 /APPS/scilpy/getgraphmeasures.py  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${TEMPDIR}/CONNECTOME_LENGTH.npy  ${TEMPDIR}/graphmeasures_nodes.json
 
 if test -f "${TEMPDIR}/graphmeasures.json"; then
     echo "Successfully computed global graph measures. Saving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
@@ -292,7 +293,7 @@ else
 fi
 
 export CONN_NPY_STEM=${TEMPDIR}/CONNECTOME_NUMSTREAM_stem.npy
-python /ConnectomeSpecial/CODE/convertconnectometonp_nos.py  ${CONN_WEIGHT_STEM}  ${CONN_NPY_STEM} ${NUMSTREAMS}
+python3 /ConnectomeSpecial/CODE/convertconnectometonp_nos.py  ${CONN_WEIGHT_STEM}  ${CONN_NPY_STEM} ${NUMSTREAMS}
 if test -f "${TEMPDIR}/CONNECTOME_NUMSTREAM.npy"; then
     echo "Successfully converted csv to npy with stem and performed adaptive thresholding. Saiving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
     cp ${CONN_NPY_STEM} ${OUTPUTDIR}
@@ -314,7 +315,7 @@ fi
 
 # Convert to npy
 export NOS_NPY_STEM=${TEMPDIR}/CONNECTOME_LENGTH_stem.npy
-python /ConnectomeSpecial/CODE/convertconnectometonp.py  ${CONN_NOS_STEM} ${NOS_NPY_STEM}
+python3 /ConnectomeSpecial/CODE/convertconnectometonp.py  ${CONN_NOS_STEM} ${NOS_NPY_STEM}
 if test -f "${NOS_NPY_STEM}"; then
     echo "Successfully converted csv to npy with stem. Saving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
     cp ${NOS_NPY_STEM} ${OUTPUTDIR}
@@ -337,7 +338,7 @@ else
 fi
 
 export FA_STEM_NPY=${TEMPDIR}/CONNECTOME_FA_stem.npy
-python /ConnectomeSpecial/CODE/convertconnectometonp.py  ${FA_STEM_CSV} ${FA_STEM_NPY}
+python3 /ConnectomeSpecial/CODE/convertconnectometonp.py  ${FA_STEM_CSV} ${FA_STEM_NPY}
 if test -f "${FA_STEM_NPY}"; then
     echo "Successfully converted csv to npy. Saving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
     cp ${FA_STEM_NPY} ${OUTPUTDIR}
@@ -350,8 +351,8 @@ fi
 
 export GLOBAL_STEM=${TEMPDIR}/graphmeasures_w_stem.json
 export NODAL_STEM=${TEMPDIR}/graphmeasures_nodes_w_stem.json
-python /APPS/scilpy/getgraphmeasures.py  ${CONN_NPY_STEM} ${NOS_NPY_STEM}  ${GLOBAL_STEM} --avg_node_wise
-python /APPS/scilpy/getgraphmeasures.py  ${CONN_NPY_STEM} ${NOS_NPY_STEM}  ${NODAL_STEM}
+python3.10 /APPS/scilpy/getgraphmeasures.py  ${CONN_NPY_STEM} ${NOS_NPY_STEM}  ${GLOBAL_STEM} --avg_node_wise
+python3.10 /APPS/scilpy/getgraphmeasures.py  ${CONN_NPY_STEM} ${NOS_NPY_STEM}  ${NODAL_STEM}
 
 if test -f "${GLOBAL_STEM}"; then
     echo "Successfully computed global graph measures. Saving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
@@ -373,7 +374,6 @@ echo "Completed Connectome special." >> ${OUTPUTDIR}/log.txt
 date >> ${OUTPUTDIR}/log.txt
 
 echo "Creating QA document..."
-python /ConnectomeSpecial/CODE/qa.py ${OUTPUTDIR}/b0.nii.gz ${ATLAS} ${OUTPUTDIR}/CONNECTOME_NUMSTREAM.npy ${OUTPUTDIR}/CONNECTOME_LENGTH.npy ${OUTPUTDIR}/CONNECTOME_FA.npy ${OUTPUTDIR}/graphmeasures.json ${OUTPUTDIR}/log.txt ${OUTPUTDIR}/ConnectomeQA.png
-
 echo "Cleaning temporary directory..."
 rm -r ${TEMPDIR}
+python3.10 /ConnectomeSpecial/CODE/qa.py ${TRACKS}/b0.nii.gz ${ATLAS} ${OUTPUTDIR}/CONNECTOME_NUMSTREAM.npy ${OUTPUTDIR}/CONNECTOME_LENGTH.npy ${OUTPUTDIR}/CONNECTOME_FA.npy ${OUTPUTDIR}/graphmeasures.json ${OUTPUTDIR}/log.txt ${OUTPUTDIR}/ConnectomeQA.png
