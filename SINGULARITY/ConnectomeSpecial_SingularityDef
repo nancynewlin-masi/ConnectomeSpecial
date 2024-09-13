@@ -89,10 +89,10 @@ https://github.com/MASILab/AtlasToDiffusionReg
     cd /
 
     # Make custom folders
-    mkdir -p INPUTS
-    mkdir -p SUPPLEMENTAL
-    mkdir -p OUTPUTS
-    mkdir -p CODE
+    mkdir -p /INPUTS
+    mkdir -p /SUPPLEMENTAL
+    mkdir -p /OUTPUTS
+    mkdir -p /CODE
 
     # Set Permissions
     chmod 755 /INPUTS
