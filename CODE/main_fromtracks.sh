@@ -62,140 +62,149 @@ echo "Check for T1"
 export T1=$(find ${SLANTDIR}/pre/ -name 'orig_target.nii.gz')
 cp ${T1} ${TEMPDIR}/T1.nii.gz
 export T1=${TEMPDIR}/T1.nii.gz
-
-if test -f "${T1}"; then
-    echo "Successfully found T1 image at ${T1}." >> ${OUTPUTDIR}/log.txt
-else
-    echo "FAILED: Could not find a T1 image at ${T1}" >> ${OUTPUTDIR}/log.txt
-    echo "SOLUTION: We are searching the Slant directory provided for the T1 image used as input to the Slant algorithm. Check that there is a valid Slant folder."
-    exit 0;
-fi
-
-if test -f "${PREQUALDIR}/SCALARS/dwmri_tensor_fa.nii.gz"; then
-    echo "Successfully found fa map at ${PREQUALDIR}/SCALARS/dwmri_tensor_fa.nii.gz.">> ${OUTPUTDIR}/log.txt
-else
-    echo "FAILED: No fa map found at ${PREQUALDIR}/SCALARS/dwmri_tensor_fa.nii.gz.">> ${OUTPUTDIR}/log.txt
-    exit 0;
-fi
-
-export SLANTSEG=$(find ${SLANTDIR}/post/FinalResult/sub* -name '*seg*.nii.gz')
-if test -f "${SLANTSEG}"; then
-    echo "Successfully found slant segmentation image at ${SLANTSEG}." >> ${OUTPUTDIR}/log.txt
-else
-    echo "FAILED: No slant segmentation image at ${SLANTSEG}.">> ${OUTPUTDIR}/log.txt
-    exit 0;
-fi
-
-
-if test -f "${TEMPDIR}/T1_inDWIspace.nii.gz"; then
-    echo "Results found. Continue past registration..." >> ${OUTPUTDIR}/log.txt
-else
-    
-
-    #echo "Apply PreQual brain mask to T1 image..." >> ${OUTPUTDIR}/log.txt
-    #mri_mask ${T1} ${PREQUALDIR}/PREPROCESSED/mask.nii.gz ${TEMPDIR}/T1_brain.nii.gz
-    echo "Apply brain mask to T1 image..." >> ${OUTPUTDIR}/log.txt
-    #bet ${T1} ${TEMPDIR}/T1_brain.nii.gz
-    fslmaths ${SLANTSEG} -bin ${TEMPDIR}/Brain_mask_inT1space.nii.gz
-    fslmaths ${T1} -mul ${TEMPDIR}/Brain_mask_inT1space.nii.gz ${TEMPDIR}/T1_brain.nii.gz
-
-    if test -f "${TEMPDIR}/T1_brain.nii.gz"; then
-        echo "Successfully processed T1 brain." >> ${OUTPUTDIR}/log.txt
-    else
-        echo "FAILED: Could not get T1 brain." >> ${OUTPUTDIR}/log.txt
-        exit 0;
-    fi
-
-    echo "Apply transforms to atlas image to register to subject space..."  >> ${OUTPUTDIR}/log.txt
-    epi_reg --epi=${TRACKS}/b0.nii.gz --t1=${T1} --t1brain=${TEMPDIR}/T1_brain.nii.gz --out=${TEMPDIR}/b02t1
-
-    if test -f "${TEMPDIR}/b02t1.mat"; then
-        echo "Successfully computed a registration transform between T1 and b0." >> ${OUTPUTDIR}/log.txt
-    else
-        echo "FAILED: Registration failed. Exiting." >> ${OUTPUTDIR}/log.txt
-        exit 0;
-    fi
-
-    echo "Convert transform to go in oppisite direction..."  >> ${OUTPUTDIR}/log.txt
-    convert_xfm -omat ${TEMPDIR}/t12b0.mat -inverse ${TEMPDIR}/b02t1.mat
-
-    echo "Apply transform to T1..."  >> ${OUTPUTDIR}/log.txt  # ${TEMPDIR}/T1_bet.nii.gz
-    flirt -in ${T1} -ref ${TRACKS}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat  -out ${TEMPDIR}/T1_inDWIspace.nii.gz
-    if test -f "${TEMPDIR}/T1_inDWIspace.nii.gz"; then
-        echo "CHECK: Registered T1 found. Proceeding to next step." >> ${OUTPUTDIR}/log.txt
-    else
-        echo "ERROR FOUND: Registration failed. Exiting" >> ${OUTPUTDIR}/log.txt
-        exit 0;
-    fi
-fi
-
-#export epi_transform=/WMATLAS/dwmri%ANTS_t1tob0.txt
-#export t1_to_template_affine=/WMATLAS//dwmri%0GenericAffine.mat
-#export t1_to_template_invwarp=/WMATLAS//dwmri%1InverseWarp.nii.gz
-
-#antsApplyTransforms -d 3 -i  ${T1} -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
-#    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${TEMPDIR}/T1_inDWIspace.nii.gz
-    
-
-#echo "Labelconvert to get the Slant atlas..." >> ${OUTPUTDIR}/log.txt
-#labelconvert ${SLANTSEG} $ORIGLABELS  $DESTLABELS ${TEMPDIR}/atlas_slant_t1.nii.gz
-echo "Converting SLANT-TICV labelmap to remove CSF/WM regions (with and without brainstem)" >> ${OUTPUTDIR}/log.txt
-
-### ADDED BY MICHAEL
-python3 /ConnectomeSpecial/CODE/edit_labelmap.py ${SLANTSEG} ${NEWLABELS} ${ORIGLABELS} ${TEMPDIR}/atlas_slant_t1.nii.gz
-export ATLAS_STEM=${TEMPDIR}/atlas_slant_t1_w_stem.nii.gz
-python3 /ConnectomeSpecial/CODE/edit_labelmap.py ${SLANTSEG} ${NEWLABELS_STEM} ${ORIGLABELS} ${ATLAS_STEM}
-### END ADDITION
-
-if test -f "${TEMPDIR}/atlas_slant_t1.nii.gz"; then
-    echo "Successfully label converted slant image to sequential labels (1..n)." >> ${OUTPUTDIR}/log.txt
-else
-    echo "FAILED: Could not label convert slant image to sequential labels (1..n)." >> ${OUTPUTDIR}/log.txt
-    exit 0;
-fi
-
-if test -f "${TEMPDIR}/atlas_slant_t1_w_stem.nii.gz"; then
-    echo "Successfully label converted slant image to sequential labels (1..n+1) with stem." >> ${OUTPUTDIR}/log.txt
-else
-    echo "FAILED: Could not label convert slant image to sequential labels (1..n+1) with stem." >> ${OUTPUTDIR}/log.txt
-    exit 0;
-fi
-
-
-
-echo "Apply transform to atlas..." >> ${OUTPUTDIR}/log.txt
-#antsApplyTransforms -d 3 -i  ${TEMPDIR}/atlas_slant_t1.nii.gz -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
-#    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${TEMPDIR}/atlas_slant_subj.nii.gz
-
-flirt -in ${TEMPDIR}/atlas_slant_t1.nii.gz -ref ${TRACKS}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat -out ${TEMPDIR}/atlas_slant_subj.nii.gz  -interp nearestneighbour
 if test -f "${TEMPDIR}/atlas_slant_subj.nii.gz"; then
-    echo "Successfully applied transform to atlas." >> ${OUTPUTDIR}/log.txt
-    echo "Saving atlas as ${TEMPDIR}/atlas_slant_subj.nii.gz..." >> ${OUTPUTDIR}/log.txt
-    cp ${TEMPDIR}/atlas_slant_subj.nii.gz ${OUTPUTDIR}
-    export ATLAS=${TEMPDIR}/atlas_slant_subj.nii.gz
+    echo "Found atlas. SKipping registration."
+    
 else
-    echo "FAILED: Could not apply transform to atlas." >> ${OUTPUTDIR}/log.txt
-    exit 0;
+    if test -f "${T1}"; then
+        echo "Successfully found T1 image at ${T1}." >> ${OUTPUTDIR}/log.txt
+    else
+        echo "FAILED: Could not find a T1 image at ${T1}" >> ${OUTPUTDIR}/log.txt
+        echo "SOLUTION: We are searching the Slant directory provided for the T1 image used as input to the Slant algorithm. Check that there is a valid Slant folder."
+        exit 0;
+    fi
+    
+    if test -f "${PREQUALDIR}/SCALARS/dwmri_tensor_fa.nii.gz"; then
+        echo "Successfully found fa map at ${PREQUALDIR}/SCALARS/dwmri_tensor_fa.nii.gz.">> ${OUTPUTDIR}/log.txt
+    else
+        echo "FAILED: No fa map found at ${PREQUALDIR}/SCALARS/dwmri_tensor_fa.nii.gz.">> ${OUTPUTDIR}/log.txt
+        exit 0;
+    fi
+    
+    export SLANTSEG=$(find ${SLANTDIR}/post/FinalResult/sub* -name '*seg*.nii.gz')
+    if test -f "${SLANTSEG}"; then
+        echo "Successfully found slant segmentation image at ${SLANTSEG}." >> ${OUTPUTDIR}/log.txt
+    else
+        echo "FAILED: No slant segmentation image at ${SLANTSEG}.">> ${OUTPUTDIR}/log.txt
+        exit 0;
+    fi
+    
+    
+    if test -f "${TEMPDIR}/T1_inDWIspace.nii.gz"; then
+        echo "Results found. Continue past registration..." >> ${OUTPUTDIR}/log.txt
+    else
+        
+    
+        #echo "Apply PreQual brain mask to T1 image..." >> ${OUTPUTDIR}/log.txt
+        #mri_mask ${T1} ${PREQUALDIR}/PREPROCESSED/mask.nii.gz ${TEMPDIR}/T1_brain.nii.gz
+        echo "Apply brain mask to T1 image..." >> ${OUTPUTDIR}/log.txt
+        #bet ${T1} ${TEMPDIR}/T1_brain.nii.gz
+        fslmaths ${SLANTSEG} -bin ${TEMPDIR}/Brain_mask_inT1space.nii.gz
+        fslmaths ${T1} -mul ${TEMPDIR}/Brain_mask_inT1space.nii.gz ${TEMPDIR}/T1_brain.nii.gz
+    
+        if test -f "${TEMPDIR}/T1_brain.nii.gz"; then
+            echo "Successfully processed T1 brain." >> ${OUTPUTDIR}/log.txt
+        else
+            echo "FAILED: Could not get T1 brain." >> ${OUTPUTDIR}/log.txt
+            exit 0;
+        fi
+    
+        echo "Apply transforms to atlas image to register to subject space..."  >> ${OUTPUTDIR}/log.txt
+        epi_reg --epi=${TRACKS}/b0.nii.gz --t1=${T1} --t1brain=${TEMPDIR}/T1_brain.nii.gz --out=${TEMPDIR}/b02t1
+    
+        if test -f "${TEMPDIR}/b02t1.mat"; then
+            echo "Successfully computed a registration transform between T1 and b0." >> ${OUTPUTDIR}/log.txt
+        else
+            echo "FAILED: Registration failed. Exiting." >> ${OUTPUTDIR}/log.txt
+            exit 0;
+        fi
+    
+        echo "Convert transform to go in oppisite direction..."  >> ${OUTPUTDIR}/log.txt
+        convert_xfm -omat ${TEMPDIR}/t12b0.mat -inverse ${TEMPDIR}/b02t1.mat
+    
+        echo "Apply transform to T1..."  >> ${OUTPUTDIR}/log.txt  # ${TEMPDIR}/T1_bet.nii.gz
+        flirt -in ${T1} -ref ${TRACKS}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat  -out ${TEMPDIR}/T1_inDWIspace.nii.gz
+        if test -f "${TEMPDIR}/T1_inDWIspace.nii.gz"; then
+            echo "CHECK: Registered T1 found. Proceeding to next step." >> ${OUTPUTDIR}/log.txt
+        else
+            echo "ERROR FOUND: Registration failed. Exiting" >> ${OUTPUTDIR}/log.txt
+            exit 0;
+        fi
+    fi
+
+    
+    #export epi_transform=/WMATLAS/dwmri%ANTS_t1tob0.txt
+    #export t1_to_template_affine=/WMATLAS//dwmri%0GenericAffine.mat
+    #export t1_to_template_invwarp=/WMATLAS//dwmri%1InverseWarp.nii.gz
+    
+    #antsApplyTransforms -d 3 -i  ${T1} -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
+    #    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${TEMPDIR}/T1_inDWIspace.nii.gz
+        
+    
+    #echo "Labelconvert to get the Slant atlas..." >> ${OUTPUTDIR}/log.txt
+    #labelconvert ${SLANTSEG} $ORIGLABELS  $DESTLABELS ${TEMPDIR}/atlas_slant_t1.nii.gz
+    echo "Converting SLANT-TICV labelmap to remove CSF/WM regions (with and without brainstem)" >> ${OUTPUTDIR}/log.txt
+    
+    ### ADDED BY MICHAEL
+    python3 /ConnectomeSpecial/CODE/edit_labelmap.py ${SLANTSEG} ${NEWLABELS} ${ORIGLABELS} ${TEMPDIR}/atlas_slant_t1.nii.gz
+    export ATLAS_STEM=${TEMPDIR}/atlas_slant_t1_w_stem.nii.gz
+    python3 /ConnectomeSpecial/CODE/edit_labelmap.py ${SLANTSEG} ${NEWLABELS_STEM} ${ORIGLABELS} ${ATLAS_STEM}
+    ### END ADDITION
+    
+    if test -f "${TEMPDIR}/atlas_slant_t1.nii.gz"; then
+        echo "Successfully label converted slant image to sequential labels (1..n)." >> ${OUTPUTDIR}/log.txt
+    else
+        echo "FAILED: Could not label convert slant image to sequential labels (1..n)." >> ${OUTPUTDIR}/log.txt
+        exit 0;
+    fi
+    
+    if test -f "${TEMPDIR}/atlas_slant_t1_w_stem.nii.gz"; then
+        echo "Successfully label converted slant image to sequential labels (1..n+1) with stem." >> ${OUTPUTDIR}/log.txt
+    else
+        echo "FAILED: Could not label convert slant image to sequential labels (1..n+1) with stem." >> ${OUTPUTDIR}/log.txt
+        exit 0;
+    fi
+    
+    
+    
+    echo "Apply transform to atlas..." >> ${OUTPUTDIR}/log.txt
+    #antsApplyTransforms -d 3 -i  ${TEMPDIR}/atlas_slant_t1.nii.gz -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
+    #    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${TEMPDIR}/atlas_slant_subj.nii.gz
+    
+    flirt -in ${TEMPDIR}/atlas_slant_t1.nii.gz -ref ${TRACKS}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat -out ${TEMPDIR}/atlas_slant_subj.nii.gz  -interp nearestneighbour
+    if test -f "${TEMPDIR}/atlas_slant_subj.nii.gz"; then
+        echo "Successfully applied transform to atlas." >> ${OUTPUTDIR}/log.txt
+        echo "Saving atlas as ${TEMPDIR}/atlas_slant_subj.nii.gz..." >> ${OUTPUTDIR}/log.txt
+        cp ${TEMPDIR}/atlas_slant_subj.nii.gz ${OUTPUTDIR}
+        export ATLAS=${TEMPDIR}/atlas_slant_subj.nii.gz
+    else
+        echo "FAILED: Could not apply transform to atlas." >> ${OUTPUTDIR}/log.txt
+        exit 0;
+    fi
+    
+    ### ADDED BY MICHAEL
+    export SLANT_SUBJ_STEM=${TEMPDIR}/atlas_slant_subj_stem.nii.gz
+    #antsApplyTransforms -d 3 -i ${ATLAS_STEM} -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
+    #    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${SLANT_SUBJ_STEM}
+    flirt -in ${ATLAS_STEM} -ref ${TRACKS}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat -out ${SLANT_SUBJ_STEM} -interp nearestneighbour
+    if test -f "${SLANT_SUBJ_STEM}"; then
+        echo "Successfully applied transform to atlas with stem." >> ${OUTPUTDIR}/log.txt
+        echo "Saving atlas as ${SLANT_SUBJ_STEM}..." >> ${OUTPUTDIR}/log.txt
+        cp ${SLANT_SUBJ_STEM} ${OUTPUTDIR}
+        #export ATLAS=${TEMPDIR}/atlas_slant_subj.nii.gz
+    else
+        echo "FAILED: Could not apply transform to atlas with stem." >> ${OUTPUTDIR}/log.txt
+        exit 0;
+    fi
+    ### END ADDITION
+    
 fi
 
-### ADDED BY MICHAEL
 export SLANT_SUBJ_STEM=${TEMPDIR}/atlas_slant_subj_stem.nii.gz
-#antsApplyTransforms -d 3 -i ${ATLAS_STEM} -r ${WMATLASDIR}/dwmri%b0.nii.gz -n NearestNeighbor \
-#    -t ${epi_transform} -t ${t1_to_template_invwarp} -o ${SLANT_SUBJ_STEM}
-flirt -in ${ATLAS_STEM} -ref ${TRACKS}/b0.nii.gz -applyxfm -init ${TEMPDIR}/t12b0.mat -out ${SLANT_SUBJ_STEM} -interp nearestneighbour
-if test -f "${SLANT_SUBJ_STEM}"; then
-    echo "Successfully applied transform to atlas with stem." >> ${OUTPUTDIR}/log.txt
-    echo "Saving atlas as ${SLANT_SUBJ_STEM}..." >> ${OUTPUTDIR}/log.txt
-    cp ${SLANT_SUBJ_STEM} ${OUTPUTDIR}
-    #export ATLAS=${TEMPDIR}/atlas_slant_subj.nii.gz
-else
-    echo "FAILED: Could not apply transform to atlas with stem." >> ${OUTPUTDIR}/log.txt
-    exit 0;
-fi
-### END ADDITION
-
-
-
+export ATLAS=${TEMPDIR}/atlas_slant_subj.nii.gz
+export ATLAS_STEM=${TEMPDIR}/atlas_slant_t1_w_stem.nii.gz
+export SLANT_SUBJ_STEM=${TEMPDIR}/atlas_slant_subj_stem.nii.gz
+export SLANTSEG=$(find ${SLANTDIR}/post/FinalResult/sub* -name '*seg*.nii.gz')
 
 echo "Map tracks to Connectomes -NOS, Mean Length, FA-, guided by atlas..." >> ${OUTPUTDIR}/log.txt
 # Map tracks to connectome (weighted by NOS)
@@ -208,7 +217,7 @@ else
     exit 0;
 fi
 
-python3 /ConnectomeSpecial/CODE/convertconnectometonp_nos.py  ${TEMPDIR}/CONNECTOME_Weight_NUMSTREAMLINES_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${NUMSTREAMS}
+python3.10 /ConnectomeSpecial/CODE/convertconnectometonp_nos.py  ${TEMPDIR}/CONNECTOME_Weight_NUMSTREAMLINES_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${NUMSTREAMS}
 if test -f "${TEMPDIR}/CONNECTOME_NUMSTREAM.npy"; then
     echo "Successfully converted csv to npy and performed adaptive thresholding. Saiving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
     cp ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${OUTPUTDIR}
@@ -228,7 +237,7 @@ else
 fi
 
 # Convert to npy
-python3 /ConnectomeSpecial/CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_Weight_MEANLENGTH_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_LENGTH.npy
+python3.10 /ConnectomeSpecial/CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_Weight_MEANLENGTH_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_LENGTH.npy
 if test -f "${TEMPDIR}/CONNECTOME_LENGTH.npy"; then
     echo "Successfully converted csv to npy. Saving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
     cp ${TEMPDIR}/CONNECTOME_LENGTH.npy ${OUTPUTDIR}
@@ -248,7 +257,7 @@ else
     exit 0;
 fi
 
-python3 /ConnectomeSpecial/CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_FA.npy
+python3.10 /ConnectomeSpecial/CODE/convertconnectometonp.py  ${TEMPDIR}/CONNECTOME_Weight_MeanFA_NumStreamlines_${NUMSTREAMS}_Atlas_SLANT.csv ${TEMPDIR}/CONNECTOME_FA.npy
 if test -f "${TEMPDIR}/CONNECTOME_FA.npy"; then
     echo "Successfully converted csv to npy. Saving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
     cp ${TEMPDIR}/CONNECTOME_FA.npy ${OUTPUTDIR}
@@ -258,8 +267,8 @@ else
 fi
 
 # Get graph measure
-python3 /APPS/scilpy/getgraphmeasures.py  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${TEMPDIR}/CONNECTOME_LENGTH.npy  ${TEMPDIR}/graphmeasures.json --avg_node_wise
-python3 /APPS/scilpy/getgraphmeasures.py  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${TEMPDIR}/CONNECTOME_LENGTH.npy  ${TEMPDIR}/graphmeasures_nodes.json
+python3.10 /APPS/scilpy/getgraphmeasures.py  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${TEMPDIR}/CONNECTOME_LENGTH.npy  ${TEMPDIR}/graphmeasures.json --avg_node_wise
+python3.10 /APPS/scilpy/getgraphmeasures.py  ${TEMPDIR}/CONNECTOME_NUMSTREAM.npy ${TEMPDIR}/CONNECTOME_LENGTH.npy  ${TEMPDIR}/graphmeasures_nodes.json
 
 if test -f "${TEMPDIR}/graphmeasures.json"; then
     echo "Successfully computed global graph measures. Saving to /OUTPUTS/." >> ${OUTPUTDIR}/log.txt
